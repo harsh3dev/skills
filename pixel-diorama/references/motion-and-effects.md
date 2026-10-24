@@ -2,6 +2,8 @@
 
 ## Contents
 - Time and loops
+- The animation bar
+- Timing a single action
 - Many actors (sports, crowds, traffic)
 - Scripted sequences (fights, stories)
 - Camera moves
@@ -12,6 +14,31 @@
 - Keep one time value `t` (seconds), advanced by `dt` each frame and frozen while paused. Drive everything from `t` and `dt`. Never count frames, because 120 Hz screens would play double speed.
 - Cap `dt` (`Math.min(0.05, dt)`). After a tab switch, a huge `dt` otherwise teleports everything.
 - **Seamless loops**: pick one loop length `L` and make every cycle divide into it. If the loop is 6 s, a walk cycle of 0.75 s and a bob of 3 s both fit. Then `t % L` restarts cleanly. Background scenes (hero sections) should loop. Story scenes can either loop with a reset or end on a calm idle.
+
+## The animation bar
+
+An actor counts as animated when it has all five layers, not just a walk cycle:
+
+1. **Idle** — breathing, sway, scan, flicker. The environment needs at least two ambient loops too.
+2. **Locomotion** — distance-driven walk/run with feet planted, not sliding.
+3. **Action** — a readable wind-up, contact and recovery (throw, shoot, open, dive).
+4. **Reaction** — a flinch, knockback, squash or look-up that recovers to the same pose.
+5. **Exit / consequence** — the actor leaves or the place changes: walks out with the bag, a door closes, a stain or dropped item remains. The scene must show the actor changed it.
+
+Background actors need 1, 2 and 5. Hero actors need all five. A prop with a moving part (flag, wheel, door) needs its own loop. Nothing at hero scale is static — a character that slides without a step reads as unfinished even with good geometry.
+
+## Timing a single action
+
+When the user shared a video or GIF of the action, count frames at a known fps and convert: `seconds = frames / fps`. Then write four lines before animating:
+
+```
+wind-up   0.00 -> 0.42   weight back, anticipation
+contact   0.42 -> 0.55   fastest frames, one pose held
+follow    0.55 -> 0.90   overshoot, then settle
+recover   0.90 -> 1.30   back to idle
+```
+
+Every attack, throw or dunk needs all four. Missing anticipation is why an action reads as "it just happens"; missing follow-through is why it reads as "it snaps back". Scale the four numbers to the loop length you're building.
 
 ## Many actors (sports, crowds, traffic)
 

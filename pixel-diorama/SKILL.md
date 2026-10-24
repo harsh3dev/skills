@@ -24,6 +24,7 @@ A sparse scene looks like a tech demo. Every diorama should feel like a hand-cra
 - **Vary height and silhouette.** Flat islands look 2D. Stack crates, raise platforms, add trees, lamps, flags, rocks — anything that breaks the skyline and casts shadows.
 - **Sell the 3D with light and motion.** Hard shadows under everything, drifting particles (dust, sparks, steam, leaves), and small secondary animations (bobbing, swaying, flickering) so the scene feels alive, not a static model.
 - **Texture the surfaces.** Dotted ground edges, scattered pixels, and mixed floor materials (grass, dirt, wood planks) at the pixel scale — detail below the pixel size disappears, so spend detail at the pixel scale.
+- **Pass the detail bar.** Every hero object survives three passes — silhouette, construction, story — and touches the ground. The full test is in `references/planning.md`.
 
 `assets/pixelkit.js` implements all four plus characters, motion and effects. Use it instead of rewriting these pieces. In a project, import it. For a single-file artifact or one HTML file, copy only the helpers the scene uses (plus anything they call) and drop the `export` keywords.
 
@@ -40,7 +41,7 @@ A sparse scene looks like a tech demo. Every diorama should feel like a hand-cra
 
 ## Workflow
 
-1. **Understand the scene — ask if it isn't given.** List the stage (ground shape, floor), props, actors, what moves, any effects, and whether it loops (hero background) or tells a short story (a fight). Note whether the camera stays still or moves. If the user shared a video, extract frames (`ffmpeg -i in.mp4 -vf fps=1,scale=320:-1,tile=5x4 sheet.png`) and study the pixel size, camera angle, palette and what moves. **If the user hasn't described the scene or story, or it's too vague to list the pieces above, ask for it before building**: what's in the scene, who the characters are, what happens, and the mood. Once the scene is clear, make the remaining choices yourself and state them briefly, rather than asking many questions.
+1. **Understand the scene — ask if it isn't given.** Read `references/planning.md`. List the stage (ground shape, floor), props, actors, what moves, any effects, and whether it loops (hero background) or tells a short story (a fight). Note whether the camera stays still or moves. If the user shared a video, extract frames (`ffmpeg -i in.mp4 -vf fps=8,scale=320:-1,tile=6x4 sheet.png`) and study the pixel size, camera angle, palette and what moves — count frames at a known fps and convert to seconds for any action you'll animate. **If the user hasn't described the scene or story, or it's too vague to list the pieces above, ask for it before building**: what's in the scene, who the characters are, what happens, and the mood. Once the scene is clear, write the premise as a verb, fill a small cast and beat sheet (five beats with timestamps), and state the remaining choices in one assumption line rather than asking many questions.
 2. **Pick the stack from the project — confirm before building.** Read `references/stacks.md`. First look at the project the scene will be integrated into and pick the matching stack:
    - An existing React + three.js project (Next.js, Vite, CRA) → React + plain three, starting from `assets/starter-react.jsx`.
    - The project already uses R3F → R3F.
@@ -55,10 +56,11 @@ A sparse scene looks like a tech demo. Every diorama should feel like a hand-cra
    - Tall things add about `height × 0.8` above the ground's top edge.
    
    **Check facing too.** The default camera looks from the +x/+z side, so faces, screens, signs and anything the viewer must see should point roughly toward +x/+z. If two things must face each other (a robot and its laptop, two fighters), set them on a diagonal or side-on so the camera sees both, or accept seeing the back of one and make that back interesting.
-4. **Build the characters.** Read `references/characters.md`. Use shapes with pivots for anything with joints or big environment pieces. Use pixel grids turned into cubes for mascots, sprites the user already has, and small chunky creatures or items. Mix both freely.
-5. **Add motion and effects.** Read `references/motion-and-effects.md`. Drive everything from time. Use `createWalker` for many actors, `createTimeline` for scripted sequences, and the particle, puff and bolt helpers for effects.
+4. **Build the characters.** Read `references/characters.md`. Use shapes with pivots for anything with joints or big environment pieces. Use pixel grids turned into cubes for mascots, sprites the user already has, and small chunky creatures or items. Mix both freely. Every hero object passes the three-pass detail bar (silhouette, construction, story) in planning.md.
+5. **Add motion and effects.** Read `references/motion-and-effects.md`. Drive everything from time. Hero actors need all five animation layers (idle, locomotion, action, reaction, exit). Use `createWalker` for many actors, `createTimeline` for scripted sequences, and the particle, puff and bolt helpers for effects.
 6. **Polish only if it helps.** Read `references/polish.md`. If the camera moves, snap it to pixels. Add outlines for busy scenes and a limited palette for a strict retro look.
-7. **Finish as a proper component** using the checklist below, then explain the result in plain words (see "Talking to the user").
+7. **Verify before calling it done.** Read `references/verification.md`. Freeze and capture every beat from the beat sheet, run the numeric checks (console errors, stuck actors, teleports, facing), and keep the captures as proof.
+8. **Finish as a proper component** using the checklist below, then explain the result in plain words (see "Talking to the user").
 
 ## Component checklist
 
@@ -70,6 +72,7 @@ These matter because the component will live on a real website:
 - Rendering pauses when the scene is off-screen (IntersectionObserver).
 - Randomness is seeded (`rng(seed)`) so the scene looks the same on every load.
 - Time comes from `dt` (capped at 0.05 s), never frame counts.
+- Any second of the loop can be frozen and re-rendered identically (for proof frames), via a `?t=` param or a `freeze(t)` debug hook where practical.
 - Useful props: `pixelSize`, `paused`. A pixel-size slider is a great teaching aid when the user is learning, so include one in demos.
 - `role="img"` and an `aria-label` describe the scene.
 
@@ -91,6 +94,8 @@ If the user's reference uses famous characters (Pokémon, Mario, Disney and so o
 - `assets/pixelkit.js`: helpers covering the renderer and camera setup, textures, shapes and voxels, walkers, timeline, particles, puffs, lightning, the outline and palette post pass, and cleanup. Import it in projects; in single-file artifacts, paste only the functions you use (drop the `export` keyword).
 - `assets/starter-react.jsx`: a runnable React + three component with the full setup and controls. Edit `buildScene()` and `updateScene(s, t, dt)`. For camera moves, set `s.zoom` and `s.snapCamera = true` in the scene state and the component handles the rest.
 - `references/stacks.md`: setup for React + three, R3F and plain HTML, plus Next.js and Vite notes.
+- `references/planning.md`: premise as a verb, the scene router, the assumption line, cast and beat sheets, and the three-pass detail bar.
 - `references/characters.md`: choosing between shapes and pixel grids, rigs with pivots, walk cycles, a props cookbook, and the originality rule.
-- `references/motion-and-effects.md`: loops, many actors, timelines, camera moves, and effect recipes.
+- `references/motion-and-effects.md`: loops, the five-layer animation bar, action timing, many actors, timelines, camera moves, and effect recipes.
+- `references/verification.md`: freezing frames, proof captures per beat, numeric checks, motion strips, and long-build rules.
 - `references/polish.md`: camera snapping, outlines, palette, dithering, and a troubleshooting table.
